@@ -40,6 +40,7 @@ Currently handles C<storable> or C<application/json>.
 =back
 
 Returns a tuple of (status, msg) on failure and (id, msg) on success.
+Also automatically propagates this config change to all server processes.
 
 =cut
 
@@ -78,7 +79,7 @@ sub Create {
         return (0, $self->loc("Database setting create failed: [_1]", $msg));
     }
 
-    # XXX refresh
+    RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
 
     return ($id, $self->loc('Database setting created'));
 }
@@ -151,7 +152,8 @@ sub ValidateName {
 
 =head2 Delete
 
-Checks ACL
+Checks ACL, and on success propagates this config change to all server
+processes.
 
 =cut
 
@@ -160,7 +162,7 @@ sub Delete {
     return (0, $self->loc("Permission Denied")) unless $self->CurrentUserCanSee;
     my ($ok, $msg) = $self->SUPER::Delete(@_);
     return ($ok, $msg) if !$ok;
-    # XXX refresh
+    RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
     return ($ok, $self->loc("Database setting removed."));
 }
 
@@ -196,7 +198,7 @@ RT::DatabaseSetting itself.
 =head2 _Set
 
 Checks if the current user has I<SuperUser> before calling
-C<SUPER::_Set>.
+C<SUPER::_Set>, and then propagates this config change to all server processes.
 
 =cut
 
@@ -212,7 +214,7 @@ sub _Set {
         unless $self->CurrentUserCanSee;
 
     my ($ok, $msg) = $self->SUPER::_Set(@_);
-    # XXX refresh
+    RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
     return ($ok, $msg);
 }
 

@@ -40,6 +40,16 @@ sub LoadConfigFromDatabase {
     }
 }
 
+sub ApplyConfigChangeToAllServerProcesses {
+    my $class = shift;
+
+    # first apply locally
+    $class->LoadConfigFromDatabase();
+
+    # then notify other servers
+    # XXX
+}
+
 =head1 NAME
 
 RT-Extension-ConfigInDatabase - update RT config via admin UI

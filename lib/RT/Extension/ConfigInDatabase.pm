@@ -73,6 +73,9 @@ for (qw/LogToSyslog LogToSTDERR LogToFile LogStackTraces StatementLog/) {
     )];
 }
 
+# special case due to being only for PostLoadCheck
+$RT::Config::META{RestrictReferrerLogin}{Invisible} = 1;
+
 __PACKAGE__->LoadConfigFromDatabase();
 
 sub LoadConfigFromDatabase {

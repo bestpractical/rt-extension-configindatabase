@@ -4,6 +4,8 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
  Abort(loc('This feature is only available to system administrators'));
 }
 
+my @results;
+
 my $doc_version = $RT::VERSION;
 $doc_version =~ s/rc\d+//; # 4.4.2rc1 -> 4.4.2
 $doc_version =~ s/\.\d+-\d+-g\w+$//;  # 4.4.3-1-g123 -> 4.4
@@ -20,11 +22,55 @@ sub stringify {
     return $output;
 }
 
+if (delete $ARGS{Update}) {
+    $RT::Handle->BeginTransaction;
+    my $has_error;
+
+    for my $key (keys %ARGS) {
+        next if $key =~ /-Current$/;
+        my $val = $ARGS{$key};
+        $val = '' if $val eq '__empty_value__';
+        my $prev = $ARGS{$key . '-Current'};
+        next if $val eq $prev;
+
+        my $setting = RT::DatabaseSetting->new($session{CurrentUser});
+        $setting->Load($key);
+        if ($setting->Id) {
+            if ($setting->Disabled) {
+                $setting->SetDisabled(0);
+            }
+
+            my ($ok, $msg) = $setting->SetContent($val);
+            push @results, $msg;
+            $has_error++ if !$ok;
+        }
+        else {
+            my ($ok, $msg) = $setting->Create(
+                Name    => $key,
+                Content => $val,
+            );
+            push @results, $msg;
+            $has_error++ if !$ok;
+        }
+    }
+
+    if ($has_error) {
+        push @results, loc("No changes made.");
+        $RT::Handle->Rollback;
+    }
+    else {
+        $RT::Handle->Commit;
+    }
+}
+
 </%INIT>
 <& /Admin/Elements/Header, Title => $title &>
 <& /Elements/Tabs &>
+<& /Elements/ListActions, actions => \@results &>
 
 <form method="post" action="EditConfig.html">
+<input type="hidden" name="Update" value=1></input>
+
 <&|/Widgets/TitleBox, title => loc("RT Configuration") &>
 <table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
 <tr class="collection-as-table">
@@ -66,6 +112,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     Description  => '',
     Hints        => '',
   &>
+<input type="hidden" name="<% $key %>-Current" value="<% $raw_value %>"></input>
 % } else {
 % my $rows = 1;
 % $rows += scalar @{[ $val =~ /\n/g ]};    # each newline adds a row
@@ -73,10 +120,12 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 % $rows++ if $rows > 1;                    # buffer
 % $rows = 6 if $rows > 6;
 <textarea name="<% $key %>" cols="80" rows="<% $rows %>"><% $val %></textarea>
+<textarea name="<% $key %>-Current" class="hidden"><% $val %></textarea>
 % }
 </td>
 </tr>
 % }
 </table>
 </&>
+<& /Elements/Submit, Label => loc('Save Changes') &>
 </form>

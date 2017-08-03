@@ -190,6 +190,54 @@ sub Content {
     return $content;
 }
 
+=head2 SetContent
+
+=cut
+
+sub SetContent {
+    my $self         = shift;
+    my $value        = shift;
+    my $content_type = shift || '';
+
+    my $old_value = $self->Content;
+    unless (defined($old_value) && length($old_value)) {
+        $old_value = $self->loc('(no value)');
+    }
+
+    if (ref $value) {
+        $value = $self->_SerializeContent($value);
+        if (!$value) {
+            return (0, $@);
+        }
+        $content_type = 'storable';
+    }
+
+    $RT::Handle->BeginTransaction;
+
+    my ($ok, $msg) = $self->_Set( Field => 'Content', Value => $value );
+    if (!$ok) {
+        $RT::Handle->Rollback;
+        return ($ok, $self->loc("Unable to update [_1]: [_2]", $self->Name, $msg));
+    }
+
+    if ($self->ContentType ne $content_type) {
+        ($ok, $msg) = $self->_Set( Field => 'ContentType', Value => $content_type );
+        if (!$ok) {
+            $RT::Handle->Rollback;
+            return ($ok, $self->loc("Unable to update [_1]: [_2]", $self->Name, $msg));
+        }
+    }
+
+    $RT::Handle->Commit;
+    RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
+
+    unless (defined($value) && length($value)) {
+        $value = $self->loc('(no value)');
+    }
+
+    return ($ok, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $value));
+}
+
 =head1 PRIVATE METHODS
 
 Documented for internal use only, do not call these from outside

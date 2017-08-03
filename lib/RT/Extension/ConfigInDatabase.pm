@@ -64,6 +64,15 @@ for (qw/AllowUserAutocompleteForUnprivileged AlwaysDownloadAttachments
     $RT::Config::META{$_}{WidgetArguments} = {};
 }
 
+for (qw/LogToSyslog LogToSTDERR LogToFile LogStackTraces StatementLog/) {
+    next if !$RT::Config::META{$_};
+
+    $RT::Config::META{$_}{Widget} = '/Widgets/Form/Select';
+    $RT::Config::META{$_}{WidgetArguments}{Values} = [qw(
+        debug info notice warning error critical alert emergency
+    )];
+}
+
 __PACKAGE__->LoadConfigFromDatabase();
 
 sub LoadConfigFromDatabase {

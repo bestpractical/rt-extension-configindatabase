@@ -6,6 +6,27 @@ use RT::DatabaseSettings;
 
 our $VERSION = '0.01';
 
+for (qw/DatabaseAdmin DatabaseExtraDSN DatabaseHost DatabaseName
+        DatabasePassword DatabasePort DatabaseRTHost DatabaseType
+        DatabaseUser
+
+        WebBaseURL WebDomain WebPath WebPort WebURL
+
+        Organization rtname Plugins MailPlugins
+
+        RecordBaseClass WebSessionClass DevelMode
+
+        ExternalAuthPriority ExternalInfoPriority
+        ExternalSettings/) {
+    next if !$RT::Config::META{$_};
+
+    $RT::Config::META{$_}{Immutable} = 1;
+}
+
+# special case due to being autovivified from other options
+$RT::Config::META{ExternalAuth}{Immutable} = 1
+    if RT::Handle::cmp_version($RT::VERSION, '4.4.0') >= 0;
+
 __PACKAGE__->LoadConfigFromDatabase();
 
 sub LoadConfigFromDatabase {

@@ -41,7 +41,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 <tr class="<% $index_conf%2 ? 'oddline' : 'evenline'%>">
 <td class="collection-as-table"><% $key %></td>
 <td class="collection-as-table">
-% if ( $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
+% if ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
 <em><% loc('Must modify in config file' ) %></em>\
 % } else {
 % my $rows = 1;

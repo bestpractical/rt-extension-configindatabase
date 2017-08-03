@@ -29,6 +29,41 @@ for (qw/DatabaseAdmin DatabaseExtraDSN DatabaseHost DatabaseName
 $RT::Config::META{ExternalAuth}{Immutable} = 1
     if RT::Handle::cmp_version($RT::VERSION, '4.4.0') >= 0;
 
+for (qw/AllowUserAutocompleteForUnprivileged AlwaysDownloadAttachments
+        AmbiguousDayInFuture AmbiguousDayInPast ApprovalRejectionNotes
+        ArticleOnTicketCreate AutocompleteOwnersForSearch
+        CanonicalizeRedirectURLs CanonicalizeURLsInFeeds
+        ChartsTimezonesInDB CheckMoreMSMailHeaders DateDayBeforeMonth
+        DisableGD DisableGraphViz DisallowExecuteCode
+        DontSearchFileAttachments DropLongAttachments
+        EditCustomFieldsSingleColumn EnableReminders
+        ExternalStorageDirectLink ForceApprovalsView ForwardFromUser
+        Framebusting HideArticleSearchOnReplyCreate
+        HideResolveActionsWithDependencies
+        HideTimeFieldsFromUnprivilegedUsers LoopsToRTOwner
+        MessageBoxIncludeSignature MessageBoxIncludeSignatureOnComment
+        OnlySearchActiveTicketsInSimpleSearch ParseNewMessageForTicketCcs
+        PreferDateTimeFormatNatural PreviewScripMessages RecordOutgoingEmail
+        RestrictLoginReferrer RestrictReferrer SearchResultsAutoRedirect
+        ShowBccHeader ShowMoreAboutPrivilegedUsers ShowRTPortal
+        ShowRemoteImages ShowTransactionImages StoreLoops StrictLinkACL
+        SuppressInlineTextFiles TruncateLongAttachments
+        TrustHTMLAttachments UseFriendlyFromLine UseFriendlyToLine
+        UseOriginatorHeader UseSQLForACLChecks UseTransactionBatch
+        ValidateUserEmailAddresses WebFallbackToRTLogin
+        WebFlushDbCacheEveryRequest WebHttpOnlyCookies WebRemoteUserAuth
+        WebRemoteUserAutocreate WebRemoteUserContinuous WebRemoteUserGecos
+        WebSecureCookies WikiImplicitLinks
+
+        HideOneTimeSuggestions LinkArticlesOnInclude
+        MessageBoxUseSystemContextMenu
+        SelfServiceCorrespondenceOnly ShowSearchResultCount/) {
+    next if !$RT::Config::META{$_};
+
+    $RT::Config::META{$_}{Widget} = '/Widgets/Form/Boolean';
+    $RT::Config::META{$_}{WidgetArguments} = {};
+}
+
 __PACKAGE__->LoadConfigFromDatabase();
 
 sub LoadConfigFromDatabase {

@@ -1,0 +1,59 @@
+<%INIT>
+my $title = loc('System Configuration');
+unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'SuperUser')) {
+ Abort(loc('This feature is only available to system administrators'));
+}
+
+use Data::Dumper;
+
+sub stringify {
+    my $value = shift;
+    return "" if !defined($value);
+
+    local $Data::Dumper::Terse = 1;
+    local $Data::Dumper::Indent = 2;
+    my $output = Dumper $value;
+    chomp $output;
+    return $output;
+}
+
+</%INIT>
+<& /Admin/Elements/Header, Title => $title &>
+<& /Elements/Tabs &>
+
+<form method="post" action="EditConfig.html">
+<&|/Widgets/TitleBox, title => loc("RT Configuration") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Option</&></th>
+<th class="collection-as-table"><&|/l&>Value</&></th>
+</tr>
+<%PERL>
+my $index_conf;
+foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
+    my $meta = RT->Config->Meta( $key );
+    my $raw_value = RT->Config->Get( $key, $session{'CurrentUser'} );
+    my $val = stringify($raw_value);
+
+    $index_conf++;
+
+</%PERL>
+<tr class="<% $index_conf%2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table"><% $key %></td>
+<td class="collection-as-table">
+% if ( $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
+<em><% loc('Must modify in config file' ) %></em>\
+% } else {
+% my $rows = 1;
+% $rows += scalar @{[ $val =~ /\n/g ]};    # each newline adds a row
+% $rows += scalar @{[ $val =~ /.{79}/g ]}; # each very long line adds a row, e.g. UserSearchResultFormat
+% $rows++ if $rows > 1;                    # buffer
+% $rows = 6 if $rows > 6;
+<textarea name="<% $key %>" cols="80" rows="<% $rows %>"><% $val %></textarea>
+% }
+</td>
+</tr>
+% }
+</table>
+</&>
+</form>

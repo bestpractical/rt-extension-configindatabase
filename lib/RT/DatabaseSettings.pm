@@ -24,6 +24,8 @@ Sets default ordering by id ascending.
 sub _Init {
     my $self = shift;
 
+    $self->{'with_disabled_column'} = 1;
+
     $self->OrderBy( FIELD => 'id', ORDER => 'ASC' );
     return $self->SUPER::_Init( @_ );
 }

@@ -1,0 +1,6 @@
+/* remove unnecessary left padding for radio options */
+body#comp-Admin-Tools-EditConfig div.widget .label {
+    width: auto;
+    float: none;
+}
+

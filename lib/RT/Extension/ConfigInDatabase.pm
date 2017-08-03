@@ -6,6 +6,8 @@ use RT::DatabaseSettings;
 
 our $VERSION = '0.01';
 
+RT->AddStyleSheets("config-in-database.css");
+
 for (qw/DatabaseAdmin DatabaseExtraDSN DatabaseHost DatabaseName
         DatabasePassword DatabasePort DatabaseRTHost DatabaseType
         DatabaseUser

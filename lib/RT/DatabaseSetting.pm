@@ -71,17 +71,27 @@ sub Create {
         $args{'ContentType'} = 'storable';
     }
 
+    my $old_value = RT->Config->Get($args{Name});
+    unless (defined($old_value) && length($old_value)) {
+        $old_value = $self->loc('(no value)');
+    }
+
     ( $id, $msg ) = $self->SUPER::Create(
         map { $_ => $args{$_} } grep {exists $args{$_}}
             qw(Name Content ContentType),
     );
     unless ($id) {
-        return (0, $self->loc("Database setting create failed: [_1]", $msg));
+        return (0, $self->loc("Setting [_1] to [_2] failed: [_3]", $args{Name}, $args{Content}, $msg));
     }
 
     RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
 
-    return ($id, $self->loc('Database setting created'));
+    my $content = $self->Content;
+    unless (defined($content) && length($content)) {
+        $content = $self->loc('(no value)');
+    }
+
+    return ($id, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $content));
 }
 
 =head2 CurrentUserCanSee

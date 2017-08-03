@@ -63,6 +63,11 @@ sub Create {
     my ( $id, $msg ) = $self->ValidateName( $args{'Name'} );
     return ( 0, $msg ) unless $id;
 
+    my $meta = RT->Config->Meta($args{'Name'});
+    if ($meta->{Immutable}) {
+        return ( 0, $self->loc("You cannot update [_1] using database config; you must edit your site config", $args{'Name'}) );
+    }
+
     if (ref ($args{'Content'}) ) {
         $args{'Content'} = $self->_SerializeContent($args{'Content'});
         if (!$args{'Content'}) {

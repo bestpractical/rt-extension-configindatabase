@@ -28,10 +28,19 @@ if (delete $ARGS{Update}) {
 
     for my $key (keys %ARGS) {
         next if $key =~ /-Current$/;
+
+        my $meta = RT->Config->Meta( $key );
+
         my $val = $ARGS{$key};
         $val = '' if $val eq '__empty_value__';
         my $prev = $ARGS{$key . '-Current'};
         next if $val eq $prev;
+
+        if ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
+            push @results, loc("Cannot change [_1]: Permission Denied", $key);
+            $has_error++;
+            next;
+        }
 
         my $setting = RT::DatabaseSetting->new($session{CurrentUser});
         $setting->Load($key);

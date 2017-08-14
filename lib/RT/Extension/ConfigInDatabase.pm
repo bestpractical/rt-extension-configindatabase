@@ -73,6 +73,14 @@ for (qw/LogToSyslog LogToSTDERR LogToFile LogStackTraces StatementLog/) {
     )];
 }
 
+for (qw/DefaultSearchResultOrder/) {
+    next if !$RT::Config::META{$_};
+
+    $RT::Config::META{$_}{Widget} = '/Widgets/Form/Select';
+    $RT::Config::META{$_}{WidgetArguments}{Values} = [qw(
+        ASC DESC
+    )];
+}
 # special case due to being only for PostLoadCheck
 $RT::Config::META{RestrictReferrerLogin}{Invisible} = 1;
 

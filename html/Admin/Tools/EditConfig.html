@@ -103,6 +103,10 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 % my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
 % my $args   = $meta->{'WidgetArguments'} || {};
 % my $current_value = $widget eq '/Widgets/Form/Code' ? $val : $raw_value;
+
+% if ($widget eq '/Widgets/Form/Code' && !$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
+<em><% loc('Must modify in config file' ) %></em>
+% } else {
   <& $widget,
     Default      => 1,
     DefaultValue => '',
@@ -115,6 +119,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     Hints        => '',
   &>
 <textarea class="hidden" name="<% $key %>-Current"><% $current_value %></textarea>
+% }
 % }
 </td>
 </tr>

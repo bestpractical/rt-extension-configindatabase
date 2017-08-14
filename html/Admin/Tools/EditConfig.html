@@ -30,6 +30,8 @@ if (delete $ARGS{Update}) {
         next if $key =~ /-Current$/;
 
         my $meta = RT->Config->Meta( $key );
+        my $widget = $meta->{Widget} || '/Widgets/Form/Code';
+        my $is_code = $widget eq '/Widgets/Form/Code';
 
         my $val = $ARGS{$key};
         $val = '' if $val eq '__empty_value__';
@@ -40,6 +42,38 @@ if (delete $ARGS{Update}) {
             push @results, loc("Cannot change [_1]: Permission Denied", $key);
             $has_error++;
             next;
+        }
+
+        if ($is_code) {
+            if (!$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
+                push @results, loc("Cannot change [_1]: Permission Denied", $key);
+                $has_error++;
+                next;
+            }
+
+            my $code = $val;
+            my $coderef;
+            # similar to RT::Scrip::CompileCheck
+            do {
+                no strict 'vars';
+                $coderef = eval "sub { $code \n }";
+            };
+            if ($@) {
+                my $error = $@;
+                push @results, loc("Couldn't compile [_1] codeblock '[_2]': [_3]", $key, $code, $error);
+                $has_error++;
+                next;
+            }
+
+            if ($coderef) {
+                $val = eval { $coderef->() };
+                if ($@) {
+                    my $error = $@;
+                    push @results, loc("Couldn't execute [_1] codeblock '[_2]': [_3]", $key, $code, $error);
+                    $has_error++;
+                    next;
+                }
+            }
         }
 
         my $setting = RT::DatabaseSetting->new($session{CurrentUser});

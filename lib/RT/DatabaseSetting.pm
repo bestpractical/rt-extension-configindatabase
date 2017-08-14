@@ -96,7 +96,12 @@ sub Create {
         $content = $self->loc('(no value)');
     }
 
-    return ($id, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $content));
+    if (!ref($content) && !ref($old_value)) {
+        return ($id, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $content));
+    }
+    else {
+        return ($id, $self->loc("[_1] changed", $self->Name));
+    }
 }
 
 =head2 CurrentUserCanSee
@@ -250,7 +255,11 @@ sub SetContent {
         $value = $self->loc('(no value)');
     }
 
-    return ($ok, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $value));
+    if (!ref($value) && !ref($old_value)) {
+        return ($ok, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $value));
+    } else {
+        return ($ok, $self->loc("[_1] changed", $self->Name));
+    }
 }
 
 =head1 PRIVATE METHODS

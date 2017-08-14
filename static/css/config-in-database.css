@@ -4,3 +4,7 @@ body#comp-Admin-Tools-EditConfig div.widget .label {
     float: none;
 }
 
+body#comp-Admin-Tools-EditConfig .widget.code textarea {
+    font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+}
+

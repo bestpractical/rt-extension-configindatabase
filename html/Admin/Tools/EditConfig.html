@@ -107,14 +107,18 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 % if ( $meta->{EditLink} ) {
 <&|/l_unsafe, "<a href=\"$meta->{EditLink}\">", loc($meta->{EditLinkLabel}), "</a>" &>Visit [_1][_2][_3] to manage this setting</&>
 % } elsif ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
-<em><% loc('Must modify in config file' ) %></em>\
+% unless ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ ) {
+<input type="text" disabled width="80" value="<% $val %>"></input><br>
+% }
+<em><% loc('Must modify in config file' ) %></em>
 % } else {
 % my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
 % my $args   = $meta->{'WidgetArguments'} || {};
 % my $current_value = $widget eq '/Widgets/Form/Code' ? $val : $raw_value;
 
 % if ($widget eq '/Widgets/Form/Code' && !$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
-<em><% loc('Must modify in config file' ) %></em>
+<textarea disabled rows="6" cols="80"><% $val %></textarea>
+<br><em><% loc('Must modify in config file' ) %></em>
 % } else {
   <& $widget,
     Default      => 1,

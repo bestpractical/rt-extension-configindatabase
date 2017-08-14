@@ -144,9 +144,19 @@ sub LoadConfigFromDatabase {
             RT->Logger->warning("Change of config option '$name' at $source{File} line $source{Line} has been overridden by the config setting from the database. Please remove it from $source{File} or from the database to avoid confusion.");
         }
 
+        # hashes combine, but we don't want that behavior because the previous
+        # config settings will shadow any change that the database config makes
+        if ($meta->{Type} eq 'HASH') {
+            RT->Config->Set($name, ());
+        }
+
+        my $val = $meta->{Type} eq 'ARRAY' ? $value
+                : $meta->{Type} eq 'HASH'  ? [ %$value ]
+                                           : [ $value ];
+
         RT->Config->SetFromConfig(
             Option     => \$name,
-            Value      => [$value],
+            Value      => $val,
             Package    => 'N/A',
             File       => 'database',
             Line       => 'N/A',

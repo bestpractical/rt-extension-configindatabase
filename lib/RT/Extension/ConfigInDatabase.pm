@@ -16,7 +16,7 @@ for (qw/DatabaseAdmin DatabaseExtraDSN DatabaseHost DatabaseName
 
         Organization rtname Plugins MailPlugins
 
-        RecordBaseClass WebSessionClass DevelMode
+        RecordBaseClass WebSessionClass DevelMode DisallowExecuteCode
 
         ExternalAuthPriority ExternalInfoPriority
         ExternalSettings/) {
@@ -34,7 +34,7 @@ for (qw/AllowUserAutocompleteForUnprivileged AlwaysDownloadAttachments
         ArticleOnTicketCreate AutocompleteOwnersForSearch
         CanonicalizeRedirectURLs CanonicalizeURLsInFeeds
         ChartsTimezonesInDB CheckMoreMSMailHeaders DateDayBeforeMonth
-        DisableGD DisableGraphViz DisallowExecuteCode
+        DisableGD DisableGraphViz
         DontSearchFileAttachments DropLongAttachments
         EditCustomFieldsSingleColumn EnableReminders
         ExternalStorageDirectLink ForceApprovalsView ForwardFromUser

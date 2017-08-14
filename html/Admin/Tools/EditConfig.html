@@ -99,28 +99,22 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 <&|/l_unsafe, "<a href=\"$meta->{EditLink}\">", loc($meta->{EditLinkLabel}), "</a>" &>Visit [_1][_2][_3] to manage this setting</&>
 % } elsif ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
 <em><% loc('Must modify in config file' ) %></em>\
-% } elsif ($meta->{Widget} && $meta->{Widget} ne '/Widgets/Form/Integer') {
-  <& $meta->{'Widget'},
+% } else {
+% my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
+% my $args   = $meta->{'WidgetArguments'} || {};
+% my $current_value = $widget eq '/Widgets/Form/Code' ? $val : $raw_value;
+  <& $widget,
     Default      => 1,
     DefaultValue => '',
     DefaultLabel => '(no value)',
 
-    %{ $m->comp('/Widgets/FinalizeWidgetArguments', WidgetArguments =>
-            $meta->{'WidgetArguments'} ) },
+    %{ $m->comp('/Widgets/FinalizeWidgetArguments', WidgetArguments => $args ) },
     Name         => $key,
-    CurrentValue => $raw_value,
+    CurrentValue => $current_value,
     Description  => '',
     Hints        => '',
   &>
-<input type="hidden" name="<% $key %>-Current" value="<% $raw_value %>"></input>
-% } else {
-% my $rows = 1;
-% $rows += scalar @{[ $val =~ /\n/g ]};    # each newline adds a row
-% $rows += scalar @{[ $val =~ /.{79}/g ]}; # each very long line adds a row, e.g. UserSearchResultFormat
-% $rows++ if $rows > 1;                    # buffer
-% $rows = 6 if $rows > 6;
-<textarea name="<% $key %>" cols="80" rows="<% $rows %>"><% $val %></textarea>
-<textarea name="<% $key %>-Current" class="hidden"><% $val %></textarea>
+<textarea class="hidden" name="<% $key %>-Current"><% $current_value %></textarea>
 % }
 </td>
 </tr>

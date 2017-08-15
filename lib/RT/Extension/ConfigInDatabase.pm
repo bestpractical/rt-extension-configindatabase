@@ -147,7 +147,8 @@ sub LoadConfigFromDatabase {
 
     while (my $setting = $settings->Next) {
         my $name = $setting->Name;
-        my $value = $setting->Content;
+        my ($value, $error) = $setting->DecodedContent;
+        next if $error;
 
         use Data::Dumper;
         local $Data::Dumper::Terse = 1;

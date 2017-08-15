@@ -69,9 +69,9 @@ sub Create {
     }
 
     if (ref ($args{'Content'}) ) {
-        $args{'Content'} = $self->_SerializeContent($args{'Content'}, $args{'Name'});
-        if (!$args{'Content'}) {
-         return (0, $@);
+        ($args{'Content'}, my $error) = $self->_SerializeContent($args{'Content'}, $args{'Name'});
+        if ($error) {
+            return (0, $error);
         }
         $args{'ContentType'} = 'storable';
     }
@@ -91,7 +91,7 @@ sub Create {
 
     RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
 
-    my $content = $self->Content;
+    my ($content, $error) = $self->Content;
     unless (defined($content) && length($content)) {
         $content = $self->loc('(no value)');
     }
@@ -189,13 +189,13 @@ sub Delete {
     return ($ok, $self->loc("Database setting removed."));
 }
 
-=head2 Content
+=head2 DecodedContent
 
-Returns this setting's content.
+Returns a pair of this setting's content and any error.
 
 =cut
 
-sub Content {
+sub DecodedContent {
     my $self = shift;
 
     # Here we call _Value to run the ACL check.
@@ -207,10 +207,10 @@ sub Content {
         return $self->_DeserializeContent($content);
     }
     elsif ($type eq 'application/json') {
-        return JSON::from_json($content);
+        return $self->_DeJSONContent($content);
     }
 
-    return $content;
+    return ($content, "");
 }
 
 =head2 SetContent
@@ -224,15 +224,15 @@ sub SetContent {
 
     return (0, $self->loc("Permission Denied")) unless $self->CurrentUserCanSee;
 
-    my $old_value = $self->Content;
+    my ($old_value, $error) = $self->Content;
     unless (defined($old_value) && length($old_value)) {
         $old_value = $self->loc('(no value)');
     }
 
     if (ref $value) {
-        $value = $self->_SerializeContent($value);
-        if (!$value) {
-            return (0, $@);
+        ($value, my $error) = $self->_SerializeContent($value);
+        if ($error) {
+            return (0, $error);
         }
         $content_type = 'storable';
     }
@@ -314,8 +314,10 @@ sub _SerializeContent {
     my $content = shift;
     my $name = shift || $self->Name;
     my $frozen = eval { encode_base64(Storable::nfreeze($content)) };
-    if ($@) {
-        $RT::Logger->error("Serialization of database setting $name failed: $@");
+
+    if (my $error = $@) {
+        $RT::Logger->error("Storable serialization of database setting $name failed: $error");
+        return (undef, $self->loc("Storable serialization of database setting [_1] failed: [_2]", $name, $error));
     }
 
     return $frozen;
@@ -326,8 +328,22 @@ sub _DeserializeContent {
     my $content = shift;
 
     my $thawed = eval { Storable::thaw(decode_base64($content)) };
-    if ($@) {
-        $RT::Logger->error("Deserialization of database setting " . $self->Name . " failed: $@");
+    if (my $error = $@) {
+        $RT::Logger->error("Storable deserialization of database setting " . $self->Name . " failed: $error");
+        return (undef, $self->loc("Storable deserialization of database setting [_1] failed: [_2]", $self->Name, $error));
+    }
+
+    return $thawed;
+}
+
+sub _DeJSONContent {
+    my $self = shift;
+    my $content = shift;
+
+    my $thawed = eval { JSON::from_json($content) };
+    if (my $error = $@) {
+        $RT::Logger->error("JSON deserialization of database setting " . $self->Name . " failed: $error");
+        return (undef, $self->loc("JSON deserialization of database setting [_1] failed: [_2]", $self->Name, $error));
     }
 
     return $thawed;

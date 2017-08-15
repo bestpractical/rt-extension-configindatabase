@@ -13,7 +13,7 @@ $doc_version =~ s/rc\d+//; # 4.4.2rc1 -> 4.4.2
 $doc_version =~ s/\.\d+-\d+-g\w+$//;  # 4.4.3-1-g123 -> 4.4
 
 use Data::Dumper;
-sub stringify {
+my $stringify = sub {
     my $value = shift;
     return "" if !defined($value);
 
@@ -23,7 +23,7 @@ sub stringify {
     my $output = Dumper $value;
     chomp $output;
     return $output;
-}
+};
 
 if (delete $ARGS{Update}) {
     RT::Extension::ConfigInDatabase->BeginConfigChanges;
@@ -145,7 +145,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     next if $meta->{Invisible};
 
     my $raw_value = RT->Config->Get( $key );
-    my $val = stringify($raw_value);
+    my $val = $stringify->($raw_value);
 
     $index_conf++;
 

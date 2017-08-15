@@ -223,6 +223,11 @@ do {
 
     my $orig_HandleRequest = RT::Interface::Web->can('HandleRequest');
     *RT::Interface::Web::HandleRequest = sub {
+        if ($in_config_change_txn) {
+            RT->Logger->error("It appears that there were unbalanced calls to BeginConfigChanges with EndConfigChanges; this indicates a software fault");
+            $in_config_change_txn = 0;
+        }
+
         my $needs_update = __PACKAGE__->ConfigCacheNeedsUpdate;
         if ($needs_update > $config_cache_time) {
             __PACKAGE__->LoadConfigFromDatabase();

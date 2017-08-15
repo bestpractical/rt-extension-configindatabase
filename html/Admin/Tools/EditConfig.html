@@ -28,80 +28,87 @@ if (delete $ARGS{Update}) {
     $RT::Handle->BeginTransaction;
     my $has_error;
 
-    for my $key (keys %ARGS) {
-        next if $key =~ /-Current$/;
+    eval {
+        for my $key (keys %ARGS) {
+            next if $key =~ /-Current$/;
 
-        my $meta = RT->Config->Meta( $key );
-        my $widget = $meta->{Widget} || '/Widgets/Form/Code';
-        my $is_code = $widget eq '/Widgets/Form/Code';
+            my $meta = RT->Config->Meta( $key );
+            my $widget = $meta->{Widget} || '/Widgets/Form/Code';
+            my $is_code = $widget eq '/Widgets/Form/Code';
 
-        my $val = $ARGS{$key};
-        $val = '' if $val eq '__empty_value__';
-        my $prev = $ARGS{$key . '-Current'};
-        next if $val eq $prev;
+            my $val = $ARGS{$key};
+            $val = '' if $val eq '__empty_value__';
+            my $prev = $ARGS{$key . '-Current'};
+            next if $val eq $prev;
 
-        # for bools, check for truthiness since 0, '', and undef are equivalent
-        if ($widget eq '/Widgets/Form/Boolean') {
-            next if !!$val eq !!$prev;
-        }
+            # for bools, check for truthiness since 0, '', and undef are equivalent
+            if ($widget eq '/Widgets/Form/Boolean') {
+                next if !!$val eq !!$prev;
+            }
 
-        if ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
-            push @results, loc("Cannot change [_1]: Permission Denied", $key);
-            $has_error++;
-            next;
-        }
-
-        if ($is_code) {
-            if (!$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
+            if ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
                 push @results, loc("Cannot change [_1]: Permission Denied", $key);
                 $has_error++;
                 next;
             }
 
-            my $code = $val;
-            my $coderef;
-            # similar to RT::Scrip::CompileCheck
-            do {
-                no strict 'vars';
-                $coderef = eval "sub { $code \n }";
-            };
-            if ($@) {
-                my $error = $@;
-                push @results, loc("Couldn't compile [_1] codeblock '[_2]': [_3]", $key, $code, $error);
-                $has_error++;
-                next;
-            }
-
-            if ($coderef) {
-                $val = eval { $coderef->() };
-                if ($@) {
-                    my $error = $@;
-                    push @results, loc("Couldn't execute [_1] codeblock '[_2]': [_3]", $key, $code, $error);
+            if ($is_code) {
+                if (!$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
+                    push @results, loc("Cannot change [_1]: Permission Denied", $key);
                     $has_error++;
                     next;
                 }
+
+                my $code = $val;
+                my $coderef;
+                # similar to RT::Scrip::CompileCheck
+                do {
+                    no strict 'vars';
+                    $coderef = eval "sub { $code \n }";
+                };
+                if ($@) {
+                    my $error = $@;
+                    push @results, loc("Couldn't compile [_1] codeblock '[_2]': [_3]", $key, $code, $error);
+                    $has_error++;
+                    next;
+                }
+
+                if ($coderef) {
+                    $val = eval { $coderef->() };
+                    if ($@) {
+                        my $error = $@;
+                        push @results, loc("Couldn't execute [_1] codeblock '[_2]': [_3]", $key, $code, $error);
+                        $has_error++;
+                        next;
+                    }
+                }
+            }
+
+            my $setting = RT::DatabaseSetting->new($session{CurrentUser});
+            $setting->Load($key);
+            if ($setting->Id) {
+                if ($setting->Disabled) {
+                    $setting->SetDisabled(0);
+                }
+
+                my ($ok, $msg) = $setting->SetContent($val);
+                push @results, $msg;
+                $has_error++ if !$ok;
+            }
+            else {
+                my ($ok, $msg) = $setting->Create(
+                    Name    => $key,
+                    Content => $val,
+                );
+                push @results, $msg;
+                $has_error++ if !$ok;
             }
         }
+    };
 
-        my $setting = RT::DatabaseSetting->new($session{CurrentUser});
-        $setting->Load($key);
-        if ($setting->Id) {
-            if ($setting->Disabled) {
-                $setting->SetDisabled(0);
-            }
-
-            my ($ok, $msg) = $setting->SetContent($val);
-            push @results, $msg;
-            $has_error++ if !$ok;
-        }
-        else {
-            my ($ok, $msg) = $setting->Create(
-                Name    => $key,
-                Content => $val,
-            );
-            push @results, $msg;
-            $has_error++ if !$ok;
-        }
+    if ($@) {
+        push @results, $@;
+        $has_error++;
     }
 
     if ($has_error) {

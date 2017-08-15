@@ -149,7 +149,9 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 
     my $args   = $meta->{'WidgetArguments'} || {};
 
-    if ($widget eq '/Widgets/Form/Boolean') {
+    # RadioStyle was added to 4.4.3, and so if we are on an older version we
+    # can't specify Default => 0, since then we revert to just a checkbox
+    if ($widget eq '/Widgets/Form/Boolean' && RT::Handle::cmp_version($RT::VERSION,'4.4.3') >= 0 ) {
         %$args = (
             Default => 0,
             RadioStyle => 1,

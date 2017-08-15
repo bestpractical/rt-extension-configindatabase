@@ -14,3 +14,6 @@ body#comp-Admin-Tools-EditConfig textarea.code {
     font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
 }
 
+body#comp-Admin-Tools-EditConfig ul.plugins {
+    margin: 0;
+}:

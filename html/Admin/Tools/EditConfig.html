@@ -150,6 +150,10 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 
 % if ( $meta->{EditLink} ) {
 <&|/l_unsafe, "<a href=\"$meta->{EditLink}\">", loc($meta->{EditLinkLabel}), "</a>" &>Visit [_1][_2][_3] to manage this setting</&>
+% } elsif ( $key =~ /Plugins/) {
+<ul class="plugins">
+% for my $plugin (RT->Config->Get($key)) {
+<li><a href="https://metacpan.org/search?q=<% $plugin |u %>" target="_blank"><% $plugin %></a></li>
 % }
 </ul>
 <br><em><% loc('Must modify in config file' ) %></em>

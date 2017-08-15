@@ -142,7 +142,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 
     next if $meta->{Invisible};
 
-    my $raw_value = RT->Config->Get( $key, $session{'CurrentUser'} );
+    my $raw_value = RT->Config->Get( $key );
     my $val = stringify($raw_value);
 
     $index_conf++;

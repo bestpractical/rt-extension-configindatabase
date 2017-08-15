@@ -154,11 +154,12 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
     my $is_code = $widget eq '/Widgets/Form/Code';
     my $is_password = ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ );
-    my $current_value = $is_code ? $val : $raw_value;
     my $is_immutable = $meta->{Immutable}
                     || $meta->{Obfuscate}
+                    || ($is_code && $val =~ s/sub { "DUMMY" }/sub { ... }/g)
                     || ($is_code && !$has_execute_code);
 
+    my $current_value = $is_code ? $val : $raw_value;
     my $args   = $meta->{'WidgetArguments'} || {};
 
     # RadioStyle was added to 4.4.3, and so if we are on an older version we

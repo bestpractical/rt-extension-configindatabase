@@ -4,6 +4,8 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
  Abort(loc('This feature is only available to system administrators'));
 }
 
+my $has_execute_code = $session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System);
+
 my @results;
 
 my $doc_version = $RT::VERSION;
@@ -53,7 +55,7 @@ if (delete $ARGS{Update}) {
             }
 
             if ($is_code) {
-                if (!$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
+                if (!$has_execute_code) {
                     push @results, loc("Cannot change [_1]: Permission Denied", $key);
                     $has_error++;
                     next;
@@ -155,7 +157,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     my $current_value = $is_code ? $val : $raw_value;
     my $is_immutable = $meta->{Immutable}
                     || $meta->{Obfuscate}
-                    || ($is_code && !$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System));
+                    || ($is_code && !$has_execute_code);
 
     my $args   = $meta->{'WidgetArguments'} || {};
 

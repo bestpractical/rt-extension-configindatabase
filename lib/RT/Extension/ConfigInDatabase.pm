@@ -128,10 +128,15 @@ for (qw/DefaultSearchResultOrder/) {
 # special case due to being only for PostLoadCheck
 $RT::Config::META{RestrictReferrerLogin}{Invisible} = 1;
 
+my $config_cache_time;
+
 __PACKAGE__->LoadConfigFromDatabase();
 
 sub LoadConfigFromDatabase {
     my $class = shift;
+
+    $config_cache_time = time;
+    RT->Logger->info("Loading config from database");
 
     my $settings = RT::DatabaseSettings->new(RT->SystemUser);
     $settings->UnLimit;
@@ -176,6 +181,18 @@ sub LoadConfigFromDatabase {
     }
 }
 
+sub ConfigCacheNeedsUpdate {
+    my $self = shift;
+    my $time = shift;
+
+    if ($time) {
+        return RT->System->SetAttribute(Name => 'ConfigCacheNeedsUpdate', Content => $time);
+    } else {
+        my $cache = RT->System->FirstAttribute('ConfigCacheNeedsUpdate');
+        return (defined $cache ? $cache->Content : 0 );
+    }
+}
+
 sub ApplyConfigChangeToAllServerProcesses {
     my $class = shift;
 
@@ -183,8 +200,23 @@ sub ApplyConfigChangeToAllServerProcesses {
     $class->LoadConfigFromDatabase();
 
     # then notify other servers
-    # XXX
+    $class->ConfigCacheNeedsUpdate($config_cache_time);
 }
+
+do {
+    require RT::Interface::Web;
+    no warnings 'redefine';
+
+    my $orig_HandleRequest = RT::Interface::Web->can('HandleRequest');
+    *RT::Interface::Web::HandleRequest = sub {
+        my $needs_update = __PACKAGE__->ConfigCacheNeedsUpdate;
+        if ($needs_update > $config_cache_time) {
+            __PACKAGE__->LoadConfigFromDatabase();
+            $config_cache_time = $needs_update;
+        }
+        $orig_HandleRequest->(@_);
+    };
+};
 
 =head1 NAME
 

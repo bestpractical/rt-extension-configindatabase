@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use RT::DatabaseSetting;
 use RT::DatabaseSettings;
+use Storable;
 
 our $VERSION = '0.01';
 
@@ -129,6 +130,7 @@ for (qw/DefaultSearchResultOrder/) {
 $RT::Config::META{RestrictReferrerLogin}{Invisible} = 1;
 
 my $config_cache_time;
+my %original_setting_from_files;
 
 __PACKAGE__->LoadConfigFromDatabase();
 
@@ -141,6 +143,8 @@ sub LoadConfigFromDatabase {
     my $settings = RT::DatabaseSettings->new(RT->SystemUser);
     $settings->UnLimit;
 
+    my %seen;
+
     while (my $setting = $settings->Next) {
         my $name = $setting->Name;
         my $value = $setting->Content;
@@ -148,6 +152,15 @@ sub LoadConfigFromDatabase {
         use Data::Dumper;
         local $Data::Dumper::Terse = 1;
         RT->Logger->debug("from database: Set('$name', ".Dumper($value).");");
+
+        if (!exists $original_setting_from_files{$name}) {
+            $original_setting_from_files{$name} = [
+                scalar(RT->Config->Get($name)),
+                Storable::dclone(scalar(RT->Config->Meta($name))),
+            ];
+        }
+
+        $seen{$name}++;
 
         # are we inadvertantly overriding RT_SiteConfig.pm?
         my $meta = RT->Config->Meta($name);
@@ -178,6 +191,28 @@ sub LoadConfigFromDatabase {
             Line       => 'N/A',
             SiteConfig => 1,
         );
+    }
+
+    # anything that wasn't loaded from the database but has been set in
+    # %original_setting_from_files must have been disabled from the database,
+    # so we want to restore the original setting
+    for my $name (keys %original_setting_from_files) {
+        next if $seen{$name};
+
+        my ($value, $meta) = @{ $original_setting_from_files{$name} };
+        my $type = $meta->{Type} || 'SCALAR';
+
+        if ($type eq 'ARRAY') {
+            RT->Config->Set($name, @$value);
+        }
+        elsif ($type eq 'HASH') {
+            RT->Config->Set($name, %$value);
+        }
+        else {
+            RT->Config->Set($name, $value);
+        }
+
+        %{ RT->Config->Meta($name) } = %$meta;
     }
 }
 

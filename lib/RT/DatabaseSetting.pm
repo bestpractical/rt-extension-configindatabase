@@ -69,7 +69,7 @@ sub Create {
     }
 
     if (ref ($args{'Content'}) ) {
-        $args{'Content'} = $self->_SerializeContent($args{'Content'});
+        $args{'Content'} = $self->_SerializeContent($args{'Content'}, $args{'Name'});
         if (!$args{'Content'}) {
          return (0, $@);
         }
@@ -312,9 +312,10 @@ sub _Value {
 sub _SerializeContent {
     my $self = shift;
     my $content = shift;
+    my $name = shift || $self->Name;
     my $frozen = eval { encode_base64(Storable::nfreeze($content)) };
     if ($@) {
-        $RT::Logger->error("Serialization of database setting ". $self->Name . " failed: $@");
+        $RT::Logger->error("Serialization of database setting $name failed: $@");
     }
 
     return $frozen;

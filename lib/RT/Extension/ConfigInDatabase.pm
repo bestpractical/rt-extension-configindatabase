@@ -193,8 +193,22 @@ sub ConfigCacheNeedsUpdate {
     }
 }
 
+my $in_config_change_txn = 0;
+sub BeginConfigChanges {
+    $in_config_change_txn = $in_config_change_txn + 1;
+}
+
+sub EndConfigChanges {
+    $in_config_change_txn = $in_config_change_txn - 1;
+    if (!$in_config_change_txn) {
+        shift->ApplyConfigChangeToAllServerProcesses();
+    }
+}
+
 sub ApplyConfigChangeToAllServerProcesses {
     my $class = shift;
+
+    return if $in_config_change_txn;
 
     # first apply locally
     $class->LoadConfigFromDatabase();

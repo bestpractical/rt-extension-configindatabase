@@ -24,6 +24,7 @@ sub stringify {
 }
 
 if (delete $ARGS{Update}) {
+    RT::Extension::ConfigInDatabase->BeginConfigChanges;
     $RT::Handle->BeginTransaction;
     my $has_error;
 
@@ -110,6 +111,7 @@ if (delete $ARGS{Update}) {
     else {
         $RT::Handle->Commit;
     }
+    RT::Extension::ConfigInDatabase->EndConfigChanges;
 }
 
 </%INIT>

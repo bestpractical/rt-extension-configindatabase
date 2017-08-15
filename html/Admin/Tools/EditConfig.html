@@ -134,24 +134,33 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 
     my $doc_url = "https://docs.bestpractical.com/rt/$doc_version/RT_Config.html#$key";
 
+    my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
+    my $is_code = $widget eq '/Widgets/Form/Code';
+    my $is_password = ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ );
+    my $current_value = $is_code ? $val : $raw_value;
+    my $is_immutable = $meta->{Immutable}
+                    || $meta->{Obfuscate}
+                    || ($is_code && !$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System));
+
+    my $args   = $meta->{'WidgetArguments'} || {};
 </%PERL>
 <tr class="<% $index_conf%2 ? 'oddline' : 'evenline'%>">
 <td class="collection-as-table"><a href="<% $doc_url %>" target="_blank"><% $key %></a></td>
 <td class="collection-as-table">
+
 % if ( $meta->{EditLink} ) {
 <&|/l_unsafe, "<a href=\"$meta->{EditLink}\">", loc($meta->{EditLinkLabel}), "</a>" &>Visit [_1][_2][_3] to manage this setting</&>
-% } elsif ( $meta->{Immutable} || $meta->{Obfuscate} || ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ )) {
-% unless ($key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ ) {
-<input type="text" disabled width="80" value="<% $val %>"></input><br>
 % }
+</ul>
+<br><em><% loc('Must modify in config file' ) %></em>
+% } elsif ( $is_password ) {
 <em><% loc('Must modify in config file' ) %></em>
+% } elsif ( $is_immutable ) {
+% if ($widget eq '/Widgets/Form/MultilineString' || $widget eq '/Widgets/Form/Code') {
+<textarea disabled class="<% $is_code ? 'code' : '' %>" rows="6" cols="80"><% $current_value %></textarea>
 % } else {
-% my $widget = $meta->{'Widget'} || '/Widgets/Form/Code';
-% my $args   = $meta->{'WidgetArguments'} || {};
-% my $current_value = $widget eq '/Widgets/Form/Code' ? $val : $raw_value;
-
-% if ($widget eq '/Widgets/Form/Code' && !$session{CurrentUser}->HasRight(Right => 'ExecuteCode', Object => RT->System)) {
-<textarea disabled rows="6" cols="80"><% $val %></textarea>
+<input type="text" disabled width="80" value="<% $current_value %>"></input>
+% }
 <br><em><% loc('Must modify in config file' ) %></em>
 % } else {
   <& $widget,
@@ -166,7 +175,6 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     Hints        => '',
   &>
 <textarea class="hidden" name="<% $key %>-Current"><% $current_value %></textarea>
-% }
 % }
 </td>
 </tr>

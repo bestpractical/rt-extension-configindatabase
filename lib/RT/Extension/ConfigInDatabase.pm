@@ -146,20 +146,24 @@ sub LoadConfigFromDatabase {
 
         # are we inadvertantly overriding RT_SiteConfig.pm?
         my $meta = RT->Config->Meta($name);
-        my %source = %{ $meta->{'Source'} };
-        if ($source{'SiteConfig'} && $source{'File'} ne 'database') {
-            RT->Logger->warning("Change of config option '$name' at $source{File} line $source{Line} has been overridden by the config setting from the database. Please remove it from $source{File} or from the database to avoid confusion.");
+        if ($meta->{'Source'}) {
+            my %source = %{ $meta->{'Source'} };
+            if ($source{'SiteConfig'} && $source{'File'} ne 'database') {
+                RT->Logger->warning("Change of config option '$name' at $source{File} line $source{Line} has been overridden by the config setting from the database. Please remove it from $source{File} or from the database to avoid confusion.");
+            }
         }
+
+        my $type = $meta->{Type} || 'SCALAR';
 
         # hashes combine, but we don't want that behavior because the previous
         # config settings will shadow any change that the database config makes
-        if ($meta->{Type} eq 'HASH') {
+        if ($type eq 'HASH') {
             RT->Config->Set($name, ());
         }
 
-        my $val = $meta->{Type} eq 'ARRAY' ? $value
-                : $meta->{Type} eq 'HASH'  ? [ %$value ]
-                                           : [ $value ];
+        my $val = $type eq 'ARRAY' ? $value
+                : $type eq 'HASH'  ? [ %$value ]
+                                   : [ $value ];
 
         RT->Config->SetFromConfig(
             Option     => \$name,

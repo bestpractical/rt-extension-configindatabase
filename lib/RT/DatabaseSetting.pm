@@ -97,9 +97,11 @@ sub Create {
     }
 
     if (!ref($content) && !ref($old_value)) {
+        RT->Logger->info($self->CurrentUser->Name . " changed " . $self->Name . " from " . $old_value . " to " . $content);
         return ($id, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $content));
     }
     else {
+        RT->Logger->info($self->CurrentUser->Name . " changed " . $self->Name);
         return ($id, $self->loc("[_1] changed", $self->Name));
     }
 }
@@ -183,6 +185,7 @@ sub Delete {
     my ($ok, $msg) = $self->SUPER::Delete(@_);
     return ($ok, $msg) if !$ok;
     RT::Extension::ConfigInDatabase->ApplyConfigChangeToAllServerProcesses;
+    RT->Logger->info($self->CurrentUser->Name . " removed database setting for " . $self->Name);
     return ($ok, $self->loc("Database setting removed."));
 }
 
@@ -218,6 +221,8 @@ sub SetContent {
     my $self         = shift;
     my $value        = shift;
     my $content_type = shift || '';
+
+    return (0, $self->loc("Permission Denied")) unless $self->CurrentUserCanSee;
 
     my $old_value = $self->Content;
     unless (defined($old_value) && length($old_value)) {
@@ -256,8 +261,10 @@ sub SetContent {
     }
 
     if (!ref($value) && !ref($old_value)) {
+        RT->Logger->info($self->CurrentUser->Name . " changed " . $self->Name . " from " . $old_value . " to " . $value);
         return ($ok, $self->loc("[_1] changed from [_2] to [_3]", $self->Name, $old_value, $value));
     } else {
+        RT->Logger->info($self->CurrentUser->Name . " changed " . $self->Name);
         return ($ok, $self->loc("[_1] changed", $self->Name));
     }
 }

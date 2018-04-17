@@ -157,7 +157,7 @@ sub LoadConfigFromDatabase {
         if (!exists $original_setting_from_files{$name}) {
             $original_setting_from_files{$name} = [
                 scalar(RT->Config->Get($name)),
-                Storable::dclone(scalar(RT->Config->Meta($name))),
+                Clone::clone(scalar(RT->Config->Meta($name))),
             ];
         }
 

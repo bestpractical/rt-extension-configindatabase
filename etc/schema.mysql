@@ -12,5 +12,5 @@ CREATE TABLE RTxDatabaseSettings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE UNIQUE INDEX RTxDatabaseSettings1 ON RTxDatabaseSettings (Name);
-CREATE UNIQUE INDEX RTxDatabaseSettings2 ON RTxDatabaseSettings (Disabled);
+CREATE INDEX RTxDatabaseSettings2 ON RTxDatabaseSettings (Disabled);
 
